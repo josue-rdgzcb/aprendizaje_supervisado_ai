@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Titanic Survival Predictor - ML & Deep Blue UI</title>
+    <!-- Google Fonts: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #060a13;
+            --gradient-start: #081226;
+            --gradient-end: #040810;
+            --card-bg: rgba(15, 27, 49, 0.55);
+            --border-color: rgba(56, 189, 248, 0.12);
+            --accent-cyan: #38bdf8;
+            --accent-indigo: #6366f1;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --success-glow: rgba(16, 185, 129, 0.15);
+            --success-text: #10b981;
+            --fail-glow: rgba(239, 68, 68, 0.15);
+            --fail-text: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at center, var(--gradient-start) 0%, var(--gradient-end) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1rem;
+            overflow-x: hidden;
+        }
+
+        .wrapper {
+            width: 100%;
+            max-width: 580px;
+            z-index: 10;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 1.75rem;
+            padding: 3rem 2.5rem;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 
+                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #e0f2fe 0%, #38bdf8 50%, #6366f1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 0.95rem;
+            font-weight: 300;
+            color: var(--text-secondary);
+        }
+
+        /* Model Switch Toggler */
+        .model-selector {
+            display: flex;
+            background: rgba(4, 8, 16, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1rem;
+            padding: 0.3rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .model-option {
+            flex: 1;
+            text-align: center;
+            padding: 0.8rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            z-index: 2;
+            transition: color 0.3s ease;
+            user-select: none;
+        }
+
+        .model-option.active {
+            color: var(--text-primary);
+        }
+
+        .slider {
+            position: absolute;
+            top: 0.3rem;
+            bottom: 0.3rem;
+            left: 0.3rem;
+            width: calc(50% - 0.3rem);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(56, 189, 248, 0.15) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 0.8rem;
+            z-index: 1;
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.1);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .grid-full {
+            grid-column: span 2;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-control {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            background: rgba(4, 8, 16, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 0.9rem;
+            padding: 0.85rem 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
+            background: rgba(4, 8, 16, 0.8);
+        }
+
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.1rem;
+            padding-right: 2.5rem;
+            cursor: pointer;
+        }
+
+        button.btn-submit {
+            width: 100%;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-cyan) 100%);
+            border: none;
+            border-radius: 1rem;
+            padding: 1.1rem;
+            cursor: pointer;
+            margin-top: 2rem;
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.25);
+            transition: all 0.3s ease;
+        }
+
+        button.btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(99, 102, 241, 0.4);
+            filter: brightness(1.1);
+        }
+
+        button.btn-submit:active {
+            transform: translateY(0);
+        }
+
+        /* Results Screen */
+        .result-container {
+            margin-top: 2.5rem;
+            border-radius: 1.25rem;
+            padding: 1.8rem;
+            display: none;
+            text-align: center;
+            animation: slideUp 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            border: 1px solid transparent;
+        }
+
+        .result-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.6rem;
+            font-weight: 500;
+        }
+
+        .result-val {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.6rem;
+            letter-spacing: -0.02em;
+        }
+
+        .result-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        .result-container.survived {
+            background: var(--success-glow);
+            color: var(--success-text);
+            border-color: rgba(16, 185, 129, 0.25);
+            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.08);
+        }
+
+        .result-container.died {
+            background: var(--fail-glow);
+            color: var(--fail-text);
+            border-color: rgba(239, 68, 68, 0.25);
+            box-shadow: 0 15px 30px rgba(239, 68, 68, 0.08);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive spacing adjustments */
+        @media(max-width: 480px) {
+            .card {
+                padding: 2rem 1.5rem;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 1.2rem;
+            }
+            .grid-full {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="card">
+            <div class="header">
+                <h1>Titanic Predictor</h1>
+                <p>Ingresa los detalles para estimar la probabilidad de supervivencia</p>
+            </div>
+
+            <!-- Model Switch Toggler -->
+            <div class="model-selector">
+                <div class="slider" id="model-slider"></div>
+                <div class="model-option active" id="opt-rf" onclick="switchModel('rf')">Random Forest</div>
+                <div class="model-option" id="opt-lr" onclick="switchModel('lr')">Regresión Logística</div>
+            </div>
+
+            <form id="predictor-form">
+                <!-- Selected Model Store -->
+                <input type="hidden" name="model" id="model-input" value="rf">
+
+                <div class="grid">
+                    <div class="form-group">
+                        <label for="Pclass">Clase de Boleto</label>
+                        <select name="Pclass" id="Pclass" class="form-control">
+                            <option value="1">Primera Clase (1ra)</option>
+                            <option value="2">Segunda Clase (2da)</option>
+                            <option value="3" selected>Tercera Clase (3ra)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="Sex">Género</label>
+                        <select name="Sex" id="Sex" class="form-control">
+                            <option value="male">Masculino</option>
+                            <option value="female" selected>Femenino</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="Age">Edad (Años)</label>
+                        <input type="number" name="Age" id="Age" class="form-control" value="29" min="0" max="100" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="Fare">Tarifa ($)</label>
+                        <input type="number" name="Fare" id="Fare" class="form-control" value="75.50" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="SibSp">Hermanos / Cónyuges</label>
+                        <input type="number" name="SibSp" id="SibSp" class="form-control" value="0" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="Parch">Padres / Hijos</label>
+                        <input type="number" name="Parch" id="Parch" class="form-control" value="0" min="0" required>
+                    </div>
+
+                    <div class="form-group grid-full">
+                        <label for="Embarked">Puerto de Embarque</label>
+                        <select name="Embarked" id="Embarked" class="form-control">
+                            <option value="C" selected>Cherburgo</option>
+                            <option value="Q">Queenstown</option>
+                            <option value="S">Southampton</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Predecir Supervivencia</button>
+            </form>
+
+            <div id="result-box" class="result-container">
+                <div class="result-title" id="res-model-used">Random Forest</div>
+                <div class="result-val" id="res-outcome">Calculando...</div>
+                <div class="result-desc" id="res-prob">Probabilidad estimada: --</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchModel(type) {
+            document.getElementById('model-input').value = type;
+            const slider = document.getElementById('model-slider');
+            const optRf = document.getElementById('opt-rf');
+            const optLr = document.getElementById('opt-lr');
+
+            if (type === 'rf') {
+                slider.style.transform = 'translateX(0)';
+                optRf.classList.add('active');
+                optLr.classList.remove('active');
+            } else {
+                slider.style.transform = 'translateX(100%)';
+                optLr.classList.add('active');
+                optRf.classList.remove('active');
+            }
+        }
+
+        document.getElementById('predictor-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const payload = Object.fromEntries(formData.entries());
+
+            const resultBox = document.getElementById('result-box');
+            const resModel = document.getElementById('res-model-used');
+            const resOutcome = document.getElementById('res-outcome');
+            const resProb = document.getElementById('res-prob');
+
+            resultBox.style.display = 'block';
+            resultBox.className = 'result-container'; // clear outcome classes
+            resModel.textContent = 'Calculando...';
+            resOutcome.textContent = 'Analizando datos...';
+            resProb.textContent = '';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (data.error) {
+                    resOutcome.textContent = 'Error';
+                    resProb.textContent = data.error;
+                    resultBox.classList.add('died');
+                    return;
+                }
+
+                resModel.textContent = `Modelo: ${data.model_used}`;
+                
+                if (data.prediction === 1) {
+                    resOutcome.textContent = '¡SOBREVIVE!';
+                    resultBox.classList.add('survived');
+                } else {
+                    resOutcome.textContent = 'NO SOBREVIVE';
+                    resultBox.classList.add('died');
+                }
+
+                if (data.probability !== null && data.probability !== undefined) {
+                    const probPercent = (data.probability * 100).toFixed(1);
+                    resProb.textContent = `Confianza de la predicción: ${probPercent}%`;
+                } else {
+                    resProb.textContent = 'Confianza: N/A';
+                }
+
+            } catch (err) {
+                resOutcome.textContent = 'Error de Red';
+                resProb.textContent = 'No se pudo conectar con el servidor local.';
+                resultBox.classList.add('died');
+            }
+        };
+    </script>
+</body>
+</html>
