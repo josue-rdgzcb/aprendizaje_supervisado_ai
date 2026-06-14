@@ -30,5 +30,5 @@ def predict():
 
 # Ejecutar la aplicación en modo debug si se corre directamente
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False) 
+    app.run(debug=False) 
 
